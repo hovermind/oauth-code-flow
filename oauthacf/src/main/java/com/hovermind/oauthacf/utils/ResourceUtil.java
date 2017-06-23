@@ -15,19 +15,19 @@ import java.util.Map;
  */
 
 public class ResourceUtil {
-    public static Map<String, String> getAuthUriMap(Context ctx, int hashMapResId) {
+    public static Map<String, String> getAuthUriMap(Context ctx, String mapName, int mapResId) {
         Map<String, String> map = null;
         String key = null;
         String value = null;
 
-        XmlResourceParser parser = ctx.getResources().getXml(hashMapResId);
+        XmlResourceParser parser = ctx.getResources().getXml(mapResId);
         try {
             int eventType = parser.getEventType();
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 if (eventType == XmlPullParser.START_DOCUMENT) {
                     Log.d("ResourceUtils", "Start document");
                 } else if (eventType == XmlPullParser.START_TAG) {
-                    if (parser.getName().equals("uri-map")) {
+                    if (parser.getName().equals(mapName)) {
                         boolean isLinked = parser.getAttributeBooleanValue(null, "linked", false);
                         map = isLinked ? new LinkedHashMap<String, String>() : new HashMap<String, String>();
                     } else if (parser.getName().equals("entry")) {
@@ -55,5 +55,10 @@ public class ResourceUtil {
             return null;
         }
         return map;
+    }
+
+
+    public static Map<String, String> getAuthUriMap(Context ctx, int mapResId) {
+        return getAuthUriMap(ctx, "map", mapResId);
     }
 }

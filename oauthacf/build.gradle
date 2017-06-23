@@ -13,7 +13,7 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
-    android.buildTypes.debug.manifestPlaceholders = ['schemeName':rootProject.oauthScheme, 'hostName':rootProject.oauthHost];
+    android.buildTypes.debug.manifestPlaceholders = [schemeName:rootProject.oauthScheme, hostName:rootProject.oauthHost];
 
 
     buildTypes {
@@ -32,8 +32,12 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:customtabs:25.2.0'
+
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.8.0'
+
 
     testCompile 'junit:junit:4.12'
 }

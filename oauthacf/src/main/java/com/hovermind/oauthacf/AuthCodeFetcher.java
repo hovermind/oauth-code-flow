@@ -18,21 +18,29 @@ import java.util.Map;
 
 public class AuthCodeFetcher{
     private final String TAG = AuthCodeFetcher.class.getSimpleName();
+
     private Context mContext;
 
-    private String mAuthEndPointResId;
-    private Map<String, String> mAuthUriMapResId = null;
+    private String mAuthEndpoint;
     private Uri mAuthorizationUri;
+    private Map<String, String> mAuthUriMap = null;
 
 
-    public AuthCodeFetcher(Context mContext, @StringRes int authEndPointResId, @XmlRes int uriMapResId) {
+
+    public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, @XmlRes int uriMapResId) {
         this.mContext = mContext;
-        mAuthEndPointResId = mContext.getResources().getString(authEndPointResId);
-        mAuthUriMapResId = ResourceUtil.getAuthUriMap(mContext, uriMapResId);
+        mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
+        mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, "uri-map", uriMapResId);
+    }
+
+    public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, String mapName, @XmlRes int uriMapResId) {
+        this.mContext = mContext;
+        mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
+        mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, mapName, uriMapResId);
     }
 
     public void getAuthCode(AuthCodeListener listener){
-        if(mAuthEndPointResId == null || mAuthUriMapResId == null){
+        if(mAuthEndpoint == null || mAuthUriMap == null){
             Log.d(TAG, "getAuthCode: Authorization end point or Uri map is null, did you create xml => uri_map?");
             listener.onAuthCodeError("authorization end point or Uri map is null");
             return;
@@ -42,7 +50,7 @@ public class AuthCodeFetcher{
         RedirectUriReceiverActivity.setAuthCodeListener(listener);
 
         // get authorization uri
-        mAuthorizationUri = UriUtil.getAuthorizationUri(mAuthEndPointResId, mAuthUriMapResId);
+        mAuthorizationUri = UriUtil.makeUri(mAuthEndpoint, mAuthUriMap);
 
         // WebView
         Intent intent = new Intent(Intent.ACTION_VIEW, mAuthorizationUri);
