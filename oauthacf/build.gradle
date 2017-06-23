@@ -11,9 +11,11 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
-        manifestPlaceholders = ['schemeName':rootProject.oauthScheme, 'hostName':rootProject.oauthHost]
     }
+
+    android.buildTypes.debug.manifestPlaceholders = ['schemeName':rootProject.oauthScheme, 'hostName':rootProject.oauthHost];
+
+
     buildTypes {
         release {
             minifyEnabled false
