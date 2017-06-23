@@ -144,6 +144,7 @@ public class TokenManager {
             public void onResponse(Call<Token> call, Response<Token> response) {
                 if (response.isSuccessful()) {
                     Token token = response.body();
+
                     // checking whether validation needed or not
                     if (!"-1".equals(mIdToken)) {
                         Log.d(TAG, "fetchToken: onResponse() => id token is present, need for validation");
@@ -153,7 +154,7 @@ public class TokenManager {
 
                         validateToken(token, listener);
                     } else {
-                        Log.d(TAG, "fetchToken: onResponse() => id token is not present, no need for validation");
+                        Log.w(TAG, "fetchToken => id token is not present, no need for validation");
                         if (listener != null) {
                             listener.onTokenReceived(response.body());
                         }
@@ -181,7 +182,7 @@ public class TokenManager {
         fetchToken(uri, listener);
     }
 
-    // refresh token synchronous call
+    // refresh token: synchronous call
     public Token refreshToken(String refreshToken) {
 
         Map<String, String> params = new HashMap<>();
@@ -227,7 +228,7 @@ public class TokenManager {
         return token;
     }
 
-    // refresh token with callback
+    // refresh token: with callback
     public void refreshToken(String refreshToken, final TokenRefreshListener listener) {
 
         Map<String, String> params = new HashMap<>();
