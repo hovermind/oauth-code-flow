@@ -13,7 +13,7 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
-    android.buildTypes.debug.manifestPlaceholders = [schemeName:rootProject.oauthScheme, hostName:rootProject.oauthHost];
+    android.buildTypes.debug.manifestPlaceholders = [schemeName:"test", hostName:"test"];
 
 
     buildTypes {
