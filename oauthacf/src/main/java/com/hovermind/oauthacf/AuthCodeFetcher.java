@@ -50,7 +50,7 @@ public class AuthCodeFetcher{
         RedirectUriReceiverActivity.setAuthCodeListener(listener);
 
         // get authorization uri
-        mAuthorizationUri = UriUtil.makeUri(mAuthEndpoint, mAuthUriMap);
+        mAuthorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
 
         // WebView
         Intent intent = new Intent(Intent.ACTION_VIEW, mAuthorizationUri);

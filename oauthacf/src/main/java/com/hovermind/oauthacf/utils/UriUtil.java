@@ -13,7 +13,9 @@ import okhttp3.Request;
  */
 
 public class UriUtil {
-    public static Uri makeUri(String authEndPoint, Map<String, String> oauthUriMap) {
+    private static final String TAG = "UriUtil";
+
+    public static Uri makeAuthUri(String authEndPoint, Map<String, String> oauthUriMap) {
 
         Request request = new Request.Builder().url(authEndPoint).build();
         HttpUrl.Builder builder = request.url().newBuilder();
@@ -21,7 +23,7 @@ public class UriUtil {
             builder.addQueryParameter(param.getKey(), param.getValue());
         }
         HttpUrl httpUrl = builder.build();
-        Log.d("UriUtil", "makeUri => " + httpUrl.toString());
+        Log.d(TAG, "makeAuthUri => " + httpUrl.toString());
         return Uri.parse(httpUrl.toString());
     }
 }

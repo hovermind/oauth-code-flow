@@ -15,6 +15,8 @@ import java.util.Map;
  */
 
 public class ResourceUtil {
+    private static final String TAG = "ResourceUtil";
+
     public static Map<String, String> getAuthUriMap(Context ctx, String mapName, int mapResId) {
         Map<String, String> map = null;
         String key = null;
@@ -25,7 +27,7 @@ public class ResourceUtil {
             int eventType = parser.getEventType();
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 if (eventType == XmlPullParser.START_DOCUMENT) {
-                    Log.d("ResourceUtils", "Start document");
+                    Log.d(TAG, "Start document");
                 } else if (eventType == XmlPullParser.START_TAG) {
                     if (parser.getName().equals(mapName)) {
                         boolean isLinked = parser.getAttributeBooleanValue(null, "linked", false);
@@ -45,7 +47,14 @@ public class ResourceUtil {
                     }
                 } else if (eventType == XmlPullParser.TEXT) {
                     if (null != key) {
-                        value = parser.getText();
+                        int resId = ctx.getResources().getIdentifier(parser.getText(), "string", ctx.getPackageName());
+                        if(resId > 0){
+                            value = ctx.getResources().getString(resId);
+                            Log.d(TAG, "getAuthUriMap: resId => " + resId + "& value => " + value);
+                        }else{
+                            Log.d(TAG, "getAuthUriMap: entry does refer to string resource");
+                            value = parser.getText();
+                        }
                     }
                 }
                 eventType = parser.next();
