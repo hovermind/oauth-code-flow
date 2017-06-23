@@ -59,7 +59,7 @@ public class AuthCodeFetcher{
     }
 
     public interface AuthCodeListener{
-        void onAuthCodeReceived(String authCode);
+        void onAuthCodeReceived(String authCode, String idToken);
         void onAuthCodeError(String errorMsg);
     }
 }

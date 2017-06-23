@@ -10,6 +10,8 @@ import java.io.Serializable;
  */
 
 public class Token implements Serializable {
+    private String idToken;
+
     @SerializedName("expires_in")
     @Expose
     private Integer expiresIn;
@@ -22,6 +24,14 @@ public class Token implements Serializable {
     @SerializedName("access_token")
     @Expose
     private String accessToken;
+
+    public String getIdToken() {
+        return idToken;
+    }
+
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
+    }
 
     public Integer getExpiresIn() {
         return expiresIn;

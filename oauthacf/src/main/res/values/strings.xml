@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">OAuth 2.0 Authorization Code Flow Library for Android</string>
+    <string name="iss">"https://my.hovermind.com"</string>
+    <string name="client_id">test-client</string>
+    <string name="client_secret">test-client</string>
+    <string name="base_uri">test-uri</string>
+    <string name="redirect_uri">test-uri</string>
 </resources>
