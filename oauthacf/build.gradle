@@ -12,7 +12,7 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-        manifestPlaceholders = [schemeName:rootProject.oauthScheme, hostName:rootProject.oauthHost]
+        manifestPlaceholders = ['schemeName':rootProject.oauthScheme, 'hostName':rootProject.oauthHost]
     }
     buildTypes {
         release {
