@@ -23,11 +23,8 @@ public class RedirectUriReceiverActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate: intent data => " + getIntent().getDataString());
 
         Uri uri = Uri.parse(getIntent().getDataString());
-        String authCode = uri.getQueryParameter("code");
-        String idToken = uri.getQueryParameter("id_token") != null ? uri.getQueryParameter("id_token") : "-1";
-
         if (mListener != null) {
-            mListener.onAuthCodeReceived(authCode, idToken);
+            mListener.onAuthCodeReceived(uri);
         }
         finish();
     }
