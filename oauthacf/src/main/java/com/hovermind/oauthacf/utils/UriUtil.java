@@ -1,7 +1,6 @@
 package com.hovermind.oauthacf.utils;
 
 import android.net.Uri;
-import android.util.Log;
 
 import java.util.Map;
 
@@ -23,7 +22,6 @@ public class UriUtil {
             builder.addQueryParameter(param.getKey(), param.getValue());
         }
         HttpUrl httpUrl = builder.build();
-        Log.d(TAG, "makeAuthUri => " + httpUrl.toString());
         return Uri.parse(httpUrl.toString());
     }
 }

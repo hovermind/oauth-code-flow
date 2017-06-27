@@ -6,13 +6,15 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import com.hovermind.oauthacf.Interfaces.AuthCodeListener;
+
 
 public class RedirectUriReceiverActivity extends AppCompatActivity {
     private final String TAG = RedirectUriReceiverActivity.class.getSimpleName();
 
-    private static AuthCodeFetcher.AuthCodeListener mListener;
+    private static AuthCodeListener mListener;
 
-    public static void setAuthCodeListener(AuthCodeFetcher.AuthCodeListener listener) {
+    public static void setAuthCodeListener(AuthCodeListener listener) {
         mListener = listener;
     }
 

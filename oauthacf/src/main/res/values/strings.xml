@@ -5,4 +5,5 @@
     <string name="client_secret">test-client</string>
     <string name="base_uri">test-uri</string>
     <string name="redirect_uri">test-uri</string>
+    <string name="auth_endpoint">oauth2/authorize</string>
 </resources>

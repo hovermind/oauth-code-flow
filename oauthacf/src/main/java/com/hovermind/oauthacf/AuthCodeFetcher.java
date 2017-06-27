@@ -7,6 +7,7 @@ import android.support.annotation.StringRes;
 import android.support.annotation.XmlRes;
 import android.util.Log;
 
+import com.hovermind.oauthacf.Interfaces.AuthCodeListener;
 import com.hovermind.oauthacf.utils.ResourceUtil;
 import com.hovermind.oauthacf.utils.UriUtil;
 
@@ -16,16 +17,13 @@ import java.util.Map;
  * Created by hassan on 2017/06/22.
  */
 
-public class AuthCodeFetcher{
+public class AuthCodeFetcher {
     private final String TAG = AuthCodeFetcher.class.getSimpleName();
 
     private Context mContext;
 
     private String mAuthEndpoint;
-    private Uri mAuthorizationUri;
     private Map<String, String> mAuthUriMap = null;
-
-
 
     public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, @XmlRes int uriMapResId) {
         this.mContext = mContext;
@@ -39,9 +37,9 @@ public class AuthCodeFetcher{
         mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, mapName, uriMapResId);
     }
 
-    public void getAuthCode(AuthCodeListener listener){
-        if(mAuthEndpoint == null || mAuthUriMap == null){
-            Log.d(TAG, "getAuthCode: Authorization end point or Uri map is null, did you create xml => uri_map?");
+    public void getAuthCode(AuthCodeListener listener) {
+        if (mAuthEndpoint == null || mAuthUriMap == null) {
+            Log.d(TAG, "getAuthCode: Authorization end point or Uri map is null, did you create xml? default is uri_map");
             listener.onAuthCodeError("authorization end point or Uri map is null");
             return;
         }
@@ -50,17 +48,14 @@ public class AuthCodeFetcher{
         RedirectUriReceiverActivity.setAuthCodeListener(listener);
 
         // get authorization uri
-        mAuthorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
+        Uri authorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
+        Log.d(TAG, "getAuthCode:  authorizationUri => " + authorizationUri);
 
-        // WebView
-        Intent intent = new Intent(Intent.ACTION_VIEW, mAuthorizationUri);
+        // Sending Intent to Browser
+        Intent intent = new Intent(Intent.ACTION_VIEW, authorizationUri);
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         mContext.startActivity(intent);
     }
 
-    public interface AuthCodeListener{
-        void onAuthCodeReceived(Uri authResponseUri);
-        void onAuthCodeReceived(String authCode, String idToken);
-        void onAuthCodeError(String errorMsg);
-    }
+
 }

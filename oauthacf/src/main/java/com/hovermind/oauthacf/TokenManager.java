@@ -1,15 +1,26 @@
 package com.hovermind.oauthacf;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
+import android.support.annotation.XmlRes;
 import android.util.Base64;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.hovermind.oauthacf.Interfaces.AuthCodeListener;
+import com.hovermind.oauthacf.Interfaces.TokenListener;
+import com.hovermind.oauthacf.Interfaces.TokenRefreshListener;
+import com.hovermind.oauthacf.Interfaces.TokenValidationListener;
 import com.hovermind.oauthacf.api.TokenService;
+import com.hovermind.oauthacf.api.models.IdTokenPayload;
 import com.hovermind.oauthacf.api.models.Token;
-import com.hovermind.oauthacf.api.models.TokenInfo;
+import com.hovermind.oauthacf.utils.JwtStructure;
+import com.hovermind.oauthacf.utils.ResourceUtil;
+import com.hovermind.oauthacf.utils.TokenUtil;
+import com.hovermind.oauthacf.utils.UriUtil;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -37,15 +48,19 @@ public class TokenManager {
     private HttpLoggingInterceptor mLoggingInterceptor;
     private Context mContext;
 
+    private OkHttpClient.Builder mHttpClient;
+    private Retrofit mRetrofit;
+
     private String mBaseUri;
     private String mRedirectUri;
     private String mClientId;
     private String mClientSecret;
 
     private String mAuthCode;
-    private String mIdToken;
+    private IdTokenPayload mIdTokenPayload;
+    private String mEncodedIdToken;
     private String nonce;
-    private String mIss;
+    private String state;
     String mHeaderBasic;
 
     // request params & headers
@@ -55,20 +70,22 @@ public class TokenManager {
     private final String SCOPE = "scope";
     private final String PROMPT = "prompt";
     private final String NONCE = "nonce";
+    private final String STATE = "state";
     private final String DISPLAY = "display";
     private final String TOKEN = "token";
     private final String TOKEN_TYPE_HINT = "token_type_hint";
     private final String GRANT_TYPE = "grant_type";
     private final String REFRESH_TOKEN = "refresh_token";
     private final String CODE = "code";
+    private final String CODE_ID_TOKEN = "code id_token";
 
     private static TokenManager instance = null;
     private static TokenManager defaultInstance = null;
 
     // singleton
-    public static TokenManager getInstance(Context context, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId, @StringRes int issResId) {
+    public static TokenManager getInstance(Context context, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId) {
         if (instance == null) {
-            instance = new TokenManager(context, clientIdResId, clientSecretResId, baseUriResId, redirectUriResId, issResId);
+            instance = new TokenManager(context, clientIdResId, clientSecretResId, baseUriResId, redirectUriResId);
         }
         return instance;
     }
@@ -76,13 +93,13 @@ public class TokenManager {
     // singleton
     public static TokenManager getDefaultInstance(Context context) {
         if (defaultInstance == null) {
-            defaultInstance = new TokenManager(context, R.string.client_id, R.string.client_secret, R.string.base_uri, R.string.redirect_uri, R.string.iss);
+            defaultInstance = new TokenManager(context, R.string.client_id, R.string.client_secret, R.string.base_uri, R.string.redirect_uri);
         }
         return defaultInstance;
     }
 
     // private constructor
-    private TokenManager(Context mContext, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId, @StringRes int issResId) {
+    private TokenManager(Context mContext, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId) {
         this.mContext = mContext;
 
         // res
@@ -90,20 +107,45 @@ public class TokenManager {
         mClientSecret = mContext.getResources().getString(clientSecretResId);
         mBaseUri = mContext.getResources().getString(baseUriResId);
         mRedirectUri = mContext.getResources().getString(redirectUriResId);
-        mIss = mContext.getResources().getString(issResId);
 
         mHeaderBasic = Base64.encodeToString(String.format("%s:%s", mClientId, mClientSecret).getBytes(), Base64.NO_WRAP);
 
-        // okhttp interceptor
+        // okhttp3 logging interceptor
         mLoggingInterceptor = new HttpLoggingInterceptor();
         mLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
-    // fetch token for authorization uri
+    public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, AuthCodeListener listener) {
+        nonce = RandomStringUtils.randomAlphanumeric(12);
+        state = RandomStringUtils.randomAlphanumeric(12);
+
+        String mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
+        Map<String, String> mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, "auth_uri_map", authUriMapResId);
+        mAuthUriMap.put(NONCE, nonce);
+        mAuthUriMap.put(STATE, state);
+
+        // get authorization uri
+        Uri authorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
+        Log.d(TAG, "getAuthCode:  authorizationUri => " + authorizationUri);
+
+        // set callback
+        RedirectUriReceiverActivity.setAuthCodeListener(listener);
+
+        // Sending Intent to Browser
+        Intent intent = new Intent(Intent.ACTION_VIEW, authorizationUri);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        mContext.startActivity(intent);
+    }
+
+    public void getAuthCode(AuthCodeListener listener) {
+        getAuthCode(R.string.auth_endpoint, R.xml.uri_map, listener);
+    }
+
+    // fetch token for authorization response uri
     public void fetchToken(@NonNull Uri authResponseUri, final TokenListener listener) {
 
         mAuthCode = authResponseUri.getQueryParameter("code");
-        mIdToken = authResponseUri.getQueryParameter("id_token") != null ? authResponseUri.getQueryParameter("id_token") : "-1";
+        Log.d(TAG, "fetchToken:  AuthCode => " + mAuthCode);
 
         Map<String, String> params = new HashMap<>();
         params.put(GRANT_TYPE, "authorization_code");
@@ -111,9 +153,9 @@ public class TokenManager {
         params.put(REDIRECT_URI, mRedirectUri);
 
         // Client
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        httpClient.followRedirects(true);
-        httpClient.addInterceptor(new Interceptor() {
+        mHttpClient = new OkHttpClient.Builder();
+        mHttpClient.followRedirects(true);
+        mHttpClient.addInterceptor(new Interceptor() {
             @Override
             public okhttp3.Response intercept(Chain chain) throws IOException {
                 // add custom headers
@@ -126,39 +168,28 @@ public class TokenManager {
             }
         });
 
-        // okhttp logging
-        httpClient.addInterceptor(mLoggingInterceptor);
+        // okHttp3 logging interceptor
+        mHttpClient.addInterceptor(mLoggingInterceptor);
 
         // Retrofit
-        Retrofit retrofit = new Retrofit.Builder()
+        mRetrofit = new Retrofit.Builder()
                 .baseUrl(mBaseUri)
-                .client(httpClient.build())
+                .client(mHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         // api call
-        TokenService tokenService = retrofit.create(TokenService.class);
+        TokenService tokenService = mRetrofit.create(TokenService.class);
         Call<Token> tokenCall = tokenService.fetchToken(params);
         tokenCall.enqueue(new Callback<Token>() {
             @Override
             public void onResponse(Call<Token> call, Response<Token> response) {
                 if (response.isSuccessful()) {
+
                     Token token = response.body();
+                    listener.onTokenReceived(token);
+                    //validateEncodedIdToken(token, listener);
 
-                    // checking whether validation needed or not
-                    if (!"-1".equals(mIdToken)) {
-                        Log.d(TAG, "fetchToken: onResponse() => id token is present, need for validation");
-
-                        token.setIdToken(mIdToken);
-                        Log.d(TAG, "fetchToken: onResponse() => id token == " + mIdToken);
-
-                        validateToken(token, listener);
-                    } else {
-                        Log.w(TAG, "fetchToken => id token is not present, no need for validation");
-                        if (listener != null) {
-                            listener.onTokenReceived(response.body());
-                        }
-                    }
                 } else {
                     if (listener != null) {
                         listener.onTokenError("Failed to get token. Response unsuccessful(Code:" + response.code() + ")");
@@ -182,22 +213,77 @@ public class TokenManager {
         fetchToken(uri, listener);
     }
 
+    // token validation
+    public void validateEncodedIdToken(@NonNull final Token token, @StringRes int issResId, final TokenValidationListener listener) {
+        String iss = mContext.getResources().getString(issResId);
+
+        mEncodedIdToken = token.getIdToken();
+        Log.d(TAG, "Encoded Id Token => " + mEncodedIdToken);
+
+        JwtStructure jwtStructure = TokenUtil.parseEncodedIdToken(mEncodedIdToken);
+        String payloadString = jwtStructure.getPayload();
+
+        if (payloadString != null && payloadString != "") {
+            Log.d(TAG, "validateEncodedIdToken: PayloadString => " + payloadString);
+
+            mIdTokenPayload = new Gson().fromJson(payloadString, IdTokenPayload.class);
+            Log.d(TAG, "iss   : " + mIdTokenPayload.getIss());
+            Log.d(TAG, "exp   : " + mIdTokenPayload.getExp());
+            Log.d(TAG, "iat   : " + mIdTokenPayload.getIat());
+            Log.d(TAG, "nonce : " + mIdTokenPayload.getNonce());
+            Log.d(TAG, "azp : " + mIdTokenPayload.getAzp());
+
+            long oneDay = 24 * 60 * 60;
+            long fiveMinutes = 5 * 60;
+            Long now = new Date().getTime() / 1000;
+
+            if (iss.equals(mIdTokenPayload.getIss())
+                    && mIdTokenPayload.getAzp().equals(mClientId)
+                    && (mIdTokenPayload.getExp() - now) < (oneDay + fiveMinutes)
+                    && (mIdTokenPayload.getIat() - now) < fiveMinutes
+                    && nonce.equals(mIdTokenPayload.getNonce())) {
+
+                Log.d(TAG, "validateEncodedIdToken => token is valid");
+                if (listener != null) {
+                    listener.onValidationOk(token);
+                }
+
+            } else {
+
+                Log.e(TAG, "validateEncodedIdToken => token is not valid");
+                if (listener != null) {
+                    listener.onValidationFailed("Token is not valid");
+                }
+            }
+
+        } else {
+            Log.d(TAG, "validateEncodedIdToken:  PayloadString is null");
+            if (listener != null) {
+                listener.onValidationFailed("Payload of id token is null/empty");
+            }
+        }
+    }
+
+    public void validateEncodedIdToken(@NonNull final Token token, final TokenValidationListener listener) {
+        validateEncodedIdToken(token, R.string.iss, listener);
+    }
+
     // refresh token: synchronous call
-    public Token refreshToken(String refreshToken) {
+    public Token refreshToken(String refreshToken, @StringRes final int issResId) {
 
         Map<String, String> params = new HashMap<>();
         params.put(GRANT_TYPE, "refresh_token");
         params.put(REFRESH_TOKEN, refreshToken);
 
         // Client
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        httpClient.followRedirects(true);
-        httpClient.addInterceptor(new Interceptor() {
+        mHttpClient = new OkHttpClient.Builder();
+        mHttpClient.followRedirects(true);
+        mHttpClient.addInterceptor(new Interceptor() {
             @Override
             public okhttp3.Response intercept(Interceptor.Chain chain) throws IOException {
                 // add custom headers
                 Request request = chain.request().newBuilder()
-                        .addHeader("Host", mIss)
+                        .addHeader("Host", mContext.getResources().getString(issResId))
                         .addHeader("Authorization", "Basic " + mHeaderBasic)
                         .addHeader("Content-Type", "application/x-www-form-urlencoded")
                         .build();
@@ -206,44 +292,51 @@ public class TokenManager {
             }
         });
 
-        httpClient.addInterceptor(mLoggingInterceptor);
+        // okHttp3 logging interceptor
+        mHttpClient.addInterceptor(mLoggingInterceptor);
 
         // Retrofit
-        Retrofit retrofit = new Retrofit.Builder()
+        mRetrofit = new Retrofit.Builder()
                 .baseUrl(mBaseUri)
-                .client(httpClient.build())
+                .client(mHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         // Request
         Token token = null;
+
         try {
-            TokenService tokenService = retrofit.create(TokenService.class);
+            TokenService tokenService = mRetrofit.create(TokenService.class);
             Call<Token> refreshCall = tokenService.refreshToken(params);
             token = refreshCall.execute().body();
             Log.d(TAG, "refreshToken: token refreshed. new access token => " + token.getAccessToken());
         } catch (IOException e) {
             Log.d(TAG, "refreshToken: exception occurred for synchronous call. error => " + e.getMessage());
         }
+
         return token;
     }
 
-    // refresh token: with callback
-    public void refreshToken(String refreshToken, final TokenRefreshListener listener) {
+    public Token refreshToken(String refreshToken) {
+        return refreshToken(refreshToken, R.string.iss);
+    }
+
+    // refresh token: asynchronous call, with callback
+    public void refreshToken(String refreshToken, @StringRes final int issResId, final TokenRefreshListener listener) {
 
         Map<String, String> params = new HashMap<>();
         params.put(GRANT_TYPE, "refresh_token");
         params.put(REFRESH_TOKEN, refreshToken);
 
         // Client
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        httpClient.followRedirects(true);
-        httpClient.addInterceptor(new Interceptor() {
+        mHttpClient = new OkHttpClient.Builder();
+        mHttpClient.followRedirects(true);
+        mHttpClient.addInterceptor(new Interceptor() {
             @Override
             public okhttp3.Response intercept(Interceptor.Chain chain) throws IOException {
                 // add custom headers
                 Request request = chain.request().newBuilder()
-                        .addHeader("Host", mIss)
+                        .addHeader("Host", mContext.getResources().getString(issResId))
                         .addHeader("Authorization", "Basic " + mHeaderBasic)
                         .addHeader("Content-Type", "application/x-www-form-urlencoded")
                         .build();
@@ -252,17 +345,18 @@ public class TokenManager {
             }
         });
 
-        httpClient.addInterceptor(mLoggingInterceptor);
+        // okHttp3 logging interceptor
+        mHttpClient.addInterceptor(mLoggingInterceptor);
 
         // Retrofit
-        Retrofit retrofit = new Retrofit.Builder()
+        mRetrofit = new Retrofit.Builder()
                 .baseUrl(mBaseUri)
-                .client(httpClient.build())
+                .client(mHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         // Request
-        TokenService tokenService = retrofit.create(TokenService.class);
+        TokenService tokenService = mRetrofit.create(TokenService.class);
         Call<Token> rCall = tokenService.refreshToken(params);
         rCall.enqueue(new Callback<Token>() {
             @Override
@@ -290,101 +384,8 @@ public class TokenManager {
         });
     }
 
-    private void validateToken(final Token token, final TokenListener listener) {
-        Log.d(TAG, "validateToken => ");
-
-        String idToken = token.getIdToken();
-        String refreshToken = token.getRefreshToken();
-        String accessToken = token.getAccessToken();
-
-        Log.d(TAG, "IdToken     : " + idToken);
-        Log.d(TAG, "RefreshToken: " + refreshToken);
-        Log.d(TAG, "AccessToken : " + accessToken);
-
-        // Client
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
-        httpClient.addInterceptor(mLoggingInterceptor);
-
-        // Retrofit
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(mBaseUri)
-                .client(httpClient.build())
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        TokenService tokenService = retrofit.create(TokenService.class);
-        Call<TokenInfo> checkingCall = tokenService.checkIdToken(idToken);
-        checkingCall.enqueue(new Callback<TokenInfo>() {
-            @Override
-            public void onResponse(Call<TokenInfo> call, Response<TokenInfo> response) {
-                if (response.isSuccessful()) {
-                    TokenInfo tokenInfo = response.body();
-
-                    long oneDay = 24 * 60 * 60;
-                    long fiveMinutes = 5 * 60;
-                    Long now = new Date().getTime() / 1000;
-                    nonce = RandomStringUtils.randomAlphanumeric(12);
-
-
-                    Log.d(TAG, "TokenInfo => ");
-                    Log.d(TAG, "iss   : " + tokenInfo.getIss());
-                    Log.d(TAG, "sub   : " + tokenInfo.getSub());
-                    Log.d(TAG, "aud   : " + tokenInfo.getAud());
-                    Log.d(TAG, "exp   : " + tokenInfo.getExp());
-                    Log.d(TAG, "iat   : " + tokenInfo.getIat());
-                    Log.d(TAG, "nonce : " + tokenInfo.getNonce());
-                    Log.d(TAG, "cHash: " + tokenInfo.getCHash());
-                    Log.d(TAG, "acr   : " + tokenInfo.getAcr());
-                    Log.d(TAG, "amr   : " + tokenInfo.getAmr());
-
-                    if (tokenInfo.getIss().equals(mIss)
-                            && tokenInfo.getAud().equals(mClientId)
-                            && (tokenInfo.getExp() - now) < (oneDay + fiveMinutes)
-                            && (tokenInfo.getIat() - now) < fiveMinutes
-                            && tokenInfo.getNonce().equals(nonce)) {
-
-                        Log.i(TAG, "validateToken: token is valid");
-                        if (listener != null) {
-                            listener.onTokenReceived(token);
-                        }
-
-                    } else {
-                        Log.e(TAG, "validateToken: token is not valid");
-                        if (listener != null) {
-                            listener.onTokenError("");
-                        }
-                    }
-
-
-                } else {
-                    Log.d(TAG, "validateToken: api call is unsuccessful");
-                    if (listener != null) {
-                        listener.onTokenError("TokenValidation: unsuccessful response (Code:" + response.code() + ")");
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<TokenInfo> call, Throwable t) {
-                Log.d(TAG, "validateToken: onFailure()");
-                if (listener != null) {
-                    listener.onTokenError("TokenValidation: Failure response. error => " + t.getMessage());
-                }
-            }
-        });
-
+    public void refreshToken(String refreshToken, final TokenRefreshListener listener) {
+        refreshToken(refreshToken, R.string.iss, listener);
     }
 
-
-    public interface TokenListener {
-        void onTokenReceived(Token token);
-
-        void onTokenError(String errorMsg);
-    }
-
-    public interface TokenRefreshListener {
-        void onTokenRefreshed(Token token);
-
-        void onTokenError(String errorMsg);
-    }
 }
