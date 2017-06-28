@@ -19,5 +19,6 @@ public class Constants {
     public static final String GRANT_TYPE = "grant_type";
     public static final String REFRESH_TOKEN = "refresh_token";
     public static final String CODE = "code";
+    public static final String ID_TOKEN = "id_token";
     public static final String CODE_ID_TOKEN = "code id_token";
 }

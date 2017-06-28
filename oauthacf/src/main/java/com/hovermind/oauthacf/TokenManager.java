@@ -41,6 +41,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import static com.hovermind.oauthacf.R.string.iss;
 import static com.hovermind.oauthacf.utils.Constants.CODE;
 import static com.hovermind.oauthacf.utils.Constants.GRANT_TYPE;
+import static com.hovermind.oauthacf.utils.Constants.ID_TOKEN;
 import static com.hovermind.oauthacf.utils.Constants.REDIRECT_URI;
 import static com.hovermind.oauthacf.utils.Constants.REFRESH_TOKEN;
 
@@ -51,21 +52,21 @@ import static com.hovermind.oauthacf.utils.Constants.REFRESH_TOKEN;
 public class TokenManager {
     private static String TAG = TokenManager.class.getName();
     private HttpLoggingInterceptor mLoggingInterceptor;
-    private Context mContext;
-    AuthCodeFetcher mAuthCodeFetcher;
+    private Context mContext = null;
+    AuthCodeFetcher mAuthCodeFetcher = null;
 
-    private OkHttpClient.Builder mHttpClient;
-    private Retrofit mRetrofit;
+    private OkHttpClient.Builder mHttpClient = null;
+    private Retrofit mRetrofit = null;
 
     private String mBaseUri;
     private String mRedirectUri;
     private String mClientId;
     private String mClientSecret;
 
-    private String mAuthCode;
-    private String mNonce;
-    private String mState;
-    String mHeaderBasic;
+    private String mAuthCode = null;
+    private String mNonce = null;
+    private String mState = null;
+    String mHeaderBasic = null;
 
 
     private static TokenManager instance = null;
@@ -139,10 +140,10 @@ public class TokenManager {
     }
 
     // fetch token for authorization response uri
-    public void fetchToken(@NonNull Uri authResponseUri, final TokenListener listener) {
+    public void getToken(@NonNull Uri authResponseUri, final TokenListener listener) {
 
         mAuthCode = authResponseUri.getQueryParameter("code");
-        Log.d(TAG, "fetchToken:  AuthCode => " + mAuthCode);
+        Log.d(TAG, "getToken:  AuthCode => " + mAuthCode);
 
         Map<String, String> params = new HashMap<>();
         params.put(GRANT_TYPE, "authorization_code");
@@ -201,13 +202,105 @@ public class TokenManager {
                 }
             }
         });
-
     }
 
     // fetch token for auth code
-    public void fetchToken(@NonNull String authCode, final TokenListener listener) {
+    public void getToken(@NonNull String authCode, final TokenListener listener) {
         Uri uri = Uri.parse("hm://hovermind.com?code=" + authCode);
-        fetchToken(uri, listener);
+        getToken(uri, listener);
+    }
+
+    // requires that idToken is in the uri
+    public void getTokenWithValidation(@NonNull Uri authResponseUri, final TokenListener listener) {
+
+        mAuthCode = authResponseUri.getQueryParameter(CODE);
+        Log.d(TAG, "getTokenWithValidation:  AuthCode => " + mAuthCode);
+
+        final String idToken = authResponseUri.getQueryParameter(ID_TOKEN);
+        Log.d(TAG, "getTokenWithValidation: idToken => " + idToken);
+
+        if (idToken == null || idToken == "") {
+            Log.w(TAG, "getTokenWithValidation: Uri must contain id_token");
+            listener.onTokenError("authResponseUri does not contain id_token");
+            return;
+        }
+
+        Map<String, String> params = new HashMap<>();
+        params.put(GRANT_TYPE, "authorization_code");
+        params.put(CODE, mAuthCode);
+        params.put(REDIRECT_URI, mRedirectUri);
+
+        // Client
+        mHttpClient = new OkHttpClient.Builder();
+        mHttpClient.followRedirects(true);
+        mHttpClient.addInterceptor(new Interceptor() {
+            @Override
+            public okhttp3.Response intercept(Chain chain) throws IOException {
+                // add custom headers
+                Request request = chain.request().newBuilder()
+                        .addHeader("Authorization", "Basic " + mHeaderBasic)
+                        .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                        .build();
+
+                return chain.proceed(request);
+            }
+        });
+
+        // okHttp3 logging interceptor
+        mHttpClient.addInterceptor(mLoggingInterceptor);
+
+        // Retrofit
+        mRetrofit = new Retrofit.Builder()
+                .baseUrl(mBaseUri)
+                .client(mHttpClient.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        // api call
+        TokenService tokenService = mRetrofit.create(TokenService.class);
+        Call<Token> tokenCall = tokenService.fetchToken(params);
+        tokenCall.enqueue(new Callback<Token>() {
+            @Override
+            public void onResponse(Call<Token> call, Response<Token> response) {
+                if (response.isSuccessful()) {
+
+                    final Token token = response.body();
+                    validateByIdToken(idToken, new TokenValidationListener() {
+                        @Override
+                        public void onValidationOk(boolean isTokenValid) {
+                            Log.d(TAG, "onValidationOk: isTokenValid => " + isTokenValid);
+
+                            if (isTokenValid && listener != null)
+                                listener.onTokenReceived(token);
+                        }
+
+                        @Override
+                        public void onValidationFailed(String errorMsg) {
+                            Log.d(TAG, "onValidationFailed: Error => " + errorMsg);
+                            if (listener != null)
+                                listener.onTokenError("Token is not valid");
+                        }
+                    });
+                } else {
+                    if (listener != null) {
+                        listener.onTokenError("Failed to get token. Response unsuccessful(Code:" + response.code() + ")");
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Token> call, Throwable t) {
+                if (listener != null) {
+                    listener.onTokenError("Failure: " + t.getMessage());
+                }
+            }
+        });
+
+    }
+
+    public void getTokenWithValidation(@NonNull String authCode, @NonNull String idToken, final TokenListener listener) {
+        Uri uri = Uri.parse("hm://hovermind.com?code=" + authCode + "&id_token=" + idToken);
+        getTokenWithValidation(uri, listener);
     }
 
     // token validation
