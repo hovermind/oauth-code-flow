@@ -1,7 +1,7 @@
 package com.hovermind.oauthacf.api;
 
+import com.hovermind.oauthacf.api.models.BaseJwtModel;
 import com.hovermind.oauthacf.api.models.Token;
-import com.hovermind.oauthacf.api.models.IdTokenPayload;
 
 import java.util.Map;
 
@@ -22,13 +22,7 @@ public interface TokenService {
     @POST("access_token")
     Call<Token> refreshToken(@QueryMap Map<String, String> options);
 
-//    @GET("checktoken")
-//    Call<IdTokenPayload> checkIdToken(@Query("id_token") String idToken);
-
-//    @POST("tokeninfo")
-//    Call<Token> fetchTokenInfo(@QueryMap Map<String, String> options);
-
-    @GET("tokeninfo")
-    Call<IdTokenPayload> checkIdToken(@Query("id_token") String idToken);
+    @GET("token")
+    Call<BaseJwtModel> checkIdToken(@Query("id_token") String idToken);
 
 }

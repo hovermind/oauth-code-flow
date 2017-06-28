@@ -1,7 +1,6 @@
 package com.hovermind.oauthacf;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
@@ -15,12 +14,12 @@ import com.hovermind.oauthacf.Interfaces.TokenListener;
 import com.hovermind.oauthacf.Interfaces.TokenRefreshListener;
 import com.hovermind.oauthacf.Interfaces.TokenValidationListener;
 import com.hovermind.oauthacf.api.TokenService;
-import com.hovermind.oauthacf.api.models.IdTokenPayload;
+import com.hovermind.oauthacf.api.models.BaseJwtModel;
+import com.hovermind.oauthacf.api.models.BaseToken;
+import com.hovermind.oauthacf.api.models.JwtModel;
 import com.hovermind.oauthacf.api.models.Token;
 import com.hovermind.oauthacf.utils.JwtStructure;
-import com.hovermind.oauthacf.utils.ResourceUtil;
 import com.hovermind.oauthacf.utils.TokenUtil;
-import com.hovermind.oauthacf.utils.UriUtil;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -39,6 +38,12 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import static com.hovermind.oauthacf.R.string.iss;
+import static com.hovermind.oauthacf.utils.Constants.CODE;
+import static com.hovermind.oauthacf.utils.Constants.GRANT_TYPE;
+import static com.hovermind.oauthacf.utils.Constants.REDIRECT_URI;
+import static com.hovermind.oauthacf.utils.Constants.REFRESH_TOKEN;
+
 /**
  * Created by hassan on 2017/06/23.
  */
@@ -47,6 +52,7 @@ public class TokenManager {
     private static String TAG = TokenManager.class.getName();
     private HttpLoggingInterceptor mLoggingInterceptor;
     private Context mContext;
+    AuthCodeFetcher mAuthCodeFetcher;
 
     private OkHttpClient.Builder mHttpClient;
     private Retrofit mRetrofit;
@@ -57,32 +63,15 @@ public class TokenManager {
     private String mClientSecret;
 
     private String mAuthCode;
-    private IdTokenPayload mIdTokenPayload;
-    private String mEncodedIdToken;
-    private String nonce;
-    private String state;
+    private String mNonce;
+    private String mState;
     String mHeaderBasic;
 
-    // request params & headers
-    private final String CLIENT_ID = "client_id";
-    private final String RESPONSE_TYPE = "response_type";
-    private final String REDIRECT_URI = "redirect_uri";
-    private final String SCOPE = "scope";
-    private final String PROMPT = "prompt";
-    private final String NONCE = "nonce";
-    private final String STATE = "state";
-    private final String DISPLAY = "display";
-    private final String TOKEN = "token";
-    private final String TOKEN_TYPE_HINT = "token_type_hint";
-    private final String GRANT_TYPE = "grant_type";
-    private final String REFRESH_TOKEN = "refresh_token";
-    private final String CODE = "code";
-    private final String CODE_ID_TOKEN = "code id_token";
 
     private static TokenManager instance = null;
     private static TokenManager defaultInstance = null;
 
-    // singleton
+    // instance
     public static TokenManager getInstance(Context context, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId) {
         if (instance == null) {
             instance = new TokenManager(context, clientIdResId, clientSecretResId, baseUriResId, redirectUriResId);
@@ -90,7 +79,7 @@ public class TokenManager {
         return instance;
     }
 
-    // singleton
+    // default instance
     public static TokenManager getDefaultInstance(Context context) {
         if (defaultInstance == null) {
             defaultInstance = new TokenManager(context, R.string.client_id, R.string.client_secret, R.string.base_uri, R.string.redirect_uri);
@@ -98,7 +87,7 @@ public class TokenManager {
         return defaultInstance;
     }
 
-    // private constructor
+    // private constructor for singleton
     private TokenManager(Context mContext, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId) {
         this.mContext = mContext;
 
@@ -108,37 +97,45 @@ public class TokenManager {
         mBaseUri = mContext.getResources().getString(baseUriResId);
         mRedirectUri = mContext.getResources().getString(redirectUriResId);
 
+        // header
         mHeaderBasic = Base64.encodeToString(String.format("%s:%s", mClientId, mClientSecret).getBytes(), Base64.NO_WRAP);
 
-        // okhttp3 logging interceptor
+        // okHttp3 logging interceptor
         mLoggingInterceptor = new HttpLoggingInterceptor();
         mLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
+
+    // getting authentication code
+    public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, String mapName, String nonce, String state, AuthCodeListener listener) {
+        mNonce = RandomStringUtils.randomAlphanumeric(25);
+        if (nonce != null && !"".equals(nonce)) mNonce = nonce;
+
+        mState = RandomStringUtils.randomAlphanumeric(25);
+        if (state != null && !"".equals(state)) mState = state;
+
+        mAuthCodeFetcher = new AuthCodeFetcher(mContext, authEndpointResId, authUriMapResId, mapName, mNonce, mState);
+        mAuthCodeFetcher.getAuthCode(listener);
+    }
+
     public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, AuthCodeListener listener) {
-        nonce = RandomStringUtils.randomAlphanumeric(12);
-        state = RandomStringUtils.randomAlphanumeric(12);
-
-        String mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
-        Map<String, String> mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, "auth_uri_map", authUriMapResId);
-        mAuthUriMap.put(NONCE, nonce);
-        mAuthUriMap.put(STATE, state);
-
-        // get authorization uri
-        Uri authorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
-        Log.d(TAG, "getAuthCode:  authorizationUri => " + authorizationUri);
-
-        // set callback
-        RedirectUriReceiverActivity.setAuthCodeListener(listener);
-
-        // Sending Intent to Browser
-        Intent intent = new Intent(Intent.ACTION_VIEW, authorizationUri);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-        mContext.startActivity(intent);
+        getAuthCode(authEndpointResId, authUriMapResId, null, null, null, listener);
     }
 
     public void getAuthCode(AuthCodeListener listener) {
-        getAuthCode(R.string.auth_endpoint, R.xml.uri_map, listener);
+        getAuthCode(R.string.auth_endpoint, R.xml.oauth_uri_map, null, null, null, listener);
+    }
+
+    public void getAuthCode(String mapName, String nonce, String state, AuthCodeListener listener) {
+        getAuthCode(R.string.auth_endpoint, R.xml.oauth_uri_map, mapName, nonce, state, listener);
+    }
+
+    public void getAuthCode(String mapName, String nonce, AuthCodeListener listener) {
+        getAuthCode(R.string.auth_endpoint, R.xml.oauth_uri_map, mapName, nonce, null, listener);
+    }
+
+    public void getAuthCode(String mapName, AuthCodeListener listener) {
+        getAuthCode(R.string.auth_endpoint, R.xml.oauth_uri_map, mapName, null, null, listener);
     }
 
     // fetch token for authorization response uri
@@ -188,7 +185,7 @@ public class TokenManager {
 
                     Token token = response.body();
                     listener.onTokenReceived(token);
-                    //validateEncodedIdToken(token, listener);
+                    //validateByIdToken(token, listener);
 
                 } else {
                     if (listener != null) {
@@ -214,58 +211,153 @@ public class TokenManager {
     }
 
     // token validation
-    public void validateEncodedIdToken(@NonNull final Token token, @StringRes int issResId, final TokenValidationListener listener) {
-        String iss = mContext.getResources().getString(issResId);
+    public void validateByIdToken(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener) {
+        Log.d(TAG, "Encoded Id Token => " + idToken);
 
-        mEncodedIdToken = token.getIdToken();
-        Log.d(TAG, "Encoded Id Token => " + mEncodedIdToken);
+        if (R.string.iss == issResId)
+            Log.w(TAG, "validateByIdToken: did not create string resource for ISS");
 
-        JwtStructure jwtStructure = TokenUtil.parseEncodedIdToken(mEncodedIdToken);
+        final String iss = mContext.getResources().getString(issResId);
+        Log.d(TAG, "ISS from resource => " + iss);
+
+        JwtStructure jwtStructure = TokenUtil.parseEncodedIdToken(idToken);
         String payloadString = jwtStructure.getPayload();
 
         if (payloadString != null && payloadString != "") {
-            Log.d(TAG, "validateEncodedIdToken: PayloadString => " + payloadString);
+            Log.d(TAG, "validateByIdToken: Payload String => " + payloadString);
 
-            mIdTokenPayload = new Gson().fromJson(payloadString, IdTokenPayload.class);
-            Log.d(TAG, "iss   : " + mIdTokenPayload.getIss());
-            Log.d(TAG, "exp   : " + mIdTokenPayload.getExp());
-            Log.d(TAG, "iat   : " + mIdTokenPayload.getIat());
-            Log.d(TAG, "nonce : " + mIdTokenPayload.getNonce());
-            Log.d(TAG, "azp : " + mIdTokenPayload.getAzp());
+            BaseJwtModel payload = new Gson().fromJson(payloadString, JwtModel.class);
+            Log.d(TAG, "iss   : " + payload.getIss());
+            Log.d(TAG, "exp   : " + payload.getExp());
+            Log.d(TAG, "iat   : " + payload.getIat());
+            Log.d(TAG, "nonce : " + payload.getNonce());
+            Log.d(TAG, "aud : " + payload.getAud().get(0));
 
             long oneDay = 24 * 60 * 60;
             long fiveMinutes = 5 * 60;
             Long now = new Date().getTime() / 1000;
 
-            if (iss.equals(mIdTokenPayload.getIss())
-                    && mIdTokenPayload.getAzp().equals(mClientId)
-                    && (mIdTokenPayload.getExp() - now) < (oneDay + fiveMinutes)
-                    && (mIdTokenPayload.getIat() - now) < fiveMinutes
-                    && nonce.equals(mIdTokenPayload.getNonce())) {
+            if (iss.equals(payload.getIss())
+                    && payload.getAud().get(0).equals(mClientId)
+                    && (payload.getExp() - now) < (oneDay + fiveMinutes)
+                    && (payload.getIat() - now) < fiveMinutes
+                    && mNonce.equals(payload.getNonce())) {
 
-                Log.d(TAG, "validateEncodedIdToken => token is valid");
+                Log.d(TAG, "validateByIdToken => token is valid");
                 if (listener != null) {
-                    listener.onValidationOk(token);
+                    listener.onValidationOk(true);
                 }
 
             } else {
 
-                Log.e(TAG, "validateEncodedIdToken => token is not valid");
+                Log.e(TAG, "validateByIdToken => token is not valid");
                 if (listener != null) {
                     listener.onValidationFailed("Token is not valid");
                 }
             }
 
         } else {
-            Log.d(TAG, "validateEncodedIdToken:  PayloadString is null");
+            Log.d(TAG, "validateByIdToken:  PayloadString is null");
             if (listener != null) {
                 listener.onValidationFailed("Payload of id token is null/empty");
             }
         }
     }
 
-    public void validateEncodedIdToken(@NonNull final Token token, final TokenValidationListener listener) {
-        validateEncodedIdToken(token, R.string.iss, listener);
+    public void validateByIdToken(@NonNull final String idToken, final TokenValidationListener listener) {
+        validateByIdToken(idToken, iss, listener);
+    }
+
+    public void validateByIdToken(@NonNull final BaseToken token, @StringRes int issResId, final TokenValidationListener listener) {
+        validateByIdToken(token.getIdToken(), issResId, listener);
+    }
+
+    public void validateByIdToken(@NonNull final BaseToken token, final TokenValidationListener listener) {
+        validateByIdToken(token.getIdToken(), listener);
+    }
+
+    public void validateByJwt(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener) {
+
+        if (R.string.iss == issResId)
+            Log.w(TAG, "validateByJwt: did not create string resource for ISS");
+        final String iss = mContext.getResources().getString(issResId);
+        Log.d(TAG, "ISS from resource => " + iss);
+
+        // client
+        mHttpClient = new OkHttpClient.Builder();
+        mHttpClient.addInterceptor(mLoggingInterceptor);
+
+        // retrofit
+        mRetrofit = new Retrofit.Builder()
+                .baseUrl(mBaseUri)
+                .client(mHttpClient.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        TokenService tokenService = mRetrofit.create(TokenService.class);
+        Call<BaseJwtModel> validationCall = tokenService.checkIdToken(idToken);
+        validationCall.enqueue(new Callback<BaseJwtModel>() {
+            @Override
+            public void onResponse(Call<BaseJwtModel> call, Response<BaseJwtModel> response) {
+                if (response.isSuccessful()) {
+
+                    BaseJwtModel jwtModel = response.body();
+
+                    Log.d(TAG, "iss   : " + jwtModel.getIss());
+                    Log.d(TAG, "exp   : " + jwtModel.getExp());
+                    Log.d(TAG, "iat   : " + jwtModel.getIat());
+                    Log.d(TAG, "mNonce : " + jwtModel.getNonce());
+                    Log.d(TAG, "aud   : " + jwtModel.getAud().get(0));
+
+                    long oneDay = 24 * 60 * 60;
+                    long fiveMinutes = 5 * 60;
+                    Long now = new Date().getTime() / 1000;
+
+                    if (iss.equals(jwtModel.getIss())
+                            && jwtModel.getAud().get(0).equals(mClientId)
+                            && (jwtModel.getExp() - now) < (oneDay + fiveMinutes)
+                            && (jwtModel.getIat() - now) < fiveMinutes
+                            && mNonce.equals(jwtModel.getNonce())) {
+
+                        Log.d(TAG, "validateByIdToken => token is valid");
+                        if (listener != null) {
+                            listener.onValidationOk(true);
+                        }
+
+                    } else {
+
+                        Log.e(TAG, "validateByIdToken => token is not valid");
+                        if (listener != null) {
+                            listener.onValidationFailed("Token is not valid");
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "onResponse: unsuccessful response. error code => " + response.code());
+                    listener.onValidationFailed("unsuccessful response.");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<BaseJwtModel> call, Throwable t) {
+                Log.d(TAG, "onFailure: api call failed => " + t.getMessage());
+                if (listener != null) {
+                    listener.onValidationFailed("api call failed, error => " + t.getMessage());
+                }
+            }
+        });
+
+    }
+
+    public void validateByJwt(@NonNull final String idToken, final TokenValidationListener listener) {
+        validateByJwt(idToken, iss, listener);
+    }
+
+    public void validateByJwt(@NonNull final BaseToken token, @StringRes int issResId, final TokenValidationListener listener) {
+        validateByJwt(token.getIdToken(), issResId, listener);
+    }
+
+    public void validateByJwt(@NonNull final BaseToken token, final TokenValidationListener listener) {
+        validateByJwt(token.getIdToken(), iss, listener);
     }
 
     // refresh token: synchronous call
@@ -318,7 +410,7 @@ public class TokenManager {
     }
 
     public Token refreshToken(String refreshToken) {
-        return refreshToken(refreshToken, R.string.iss);
+        return refreshToken(refreshToken, iss);
     }
 
     // refresh token: asynchronous call, with callback
@@ -385,7 +477,7 @@ public class TokenManager {
     }
 
     public void refreshToken(String refreshToken, final TokenRefreshListener listener) {
-        refreshToken(refreshToken, R.string.iss, listener);
+        refreshToken(refreshToken, iss, listener);
     }
 
 }

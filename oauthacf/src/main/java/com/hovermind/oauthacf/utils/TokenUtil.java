@@ -21,14 +21,17 @@ public class TokenUtil {
         if (tokenParts.length > 2) {
 
             String header = decodeBase64(tokenParts[0]);
+            Log.d(TAG, "parseEncodedIdToken: header => " + header);
             String payload = decodeBase64(tokenParts[1]);
+            Log.d(TAG, "parseEncodedIdToken: payload => " + payload);
             String signature = decodeBase64(tokenParts[2]);
+            Log.d(TAG, "parseEncodedIdToken: signature => " + signature);
 
             jwtStructure.setHeader(header);
             jwtStructure.setPayload(payload);
             jwtStructure.setSignature(signature);
 
-        }else if(tokenParts.length > 0 && tokenParts.length <= 2){
+        } else if (tokenParts.length > 0 && tokenParts.length <= 2) {
 
             // signature is not present
             String header = decodeBase64(tokenParts[0]);

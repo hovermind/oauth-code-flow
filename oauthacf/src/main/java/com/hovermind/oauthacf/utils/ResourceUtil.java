@@ -17,7 +17,7 @@ import java.util.Map;
 public class ResourceUtil {
     private static final String TAG = "ResourceUtil";
 
-    public static Map<String, String> getAuthUriMap(Context ctx, String mapName, int mapResId) {
+    public static Map<String, String> getAuthUriMap(Context ctx, final String mapName, int mapResId) {
         Map<String, String> map = null;
         String key = null;
         String value = null;
@@ -68,6 +68,6 @@ public class ResourceUtil {
 
 
     public static Map<String, String> getAuthUriMap(Context ctx, int mapResId) {
-        return getAuthUriMap(ctx, "map", mapResId);
+        return getAuthUriMap(ctx, "uri_map", mapResId);
     }
 }

@@ -13,6 +13,9 @@ import com.hovermind.oauthacf.utils.UriUtil;
 
 import java.util.Map;
 
+import static com.hovermind.oauthacf.utils.Constants.NONCE;
+import static com.hovermind.oauthacf.utils.Constants.STATE;
+
 /**
  * Created by hassan on 2017/06/22.
  */
@@ -21,41 +24,46 @@ public class AuthCodeFetcher {
     private final String TAG = AuthCodeFetcher.class.getSimpleName();
 
     private Context mContext;
+    private String mNonce = null;
+    private String mState = null;
 
-    private String mAuthEndpoint;
+    private String mAuthEndpoint = "";
     private Map<String, String> mAuthUriMap = null;
 
-    public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, @XmlRes int uriMapResId) {
+    public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, @XmlRes int uriMapResId, String mapName, String mNonce, String mState) {
         this.mContext = mContext;
         mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
-        mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, "uri-map", uriMapResId);
+
+        if (mapName != null) {
+            mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, mapName, uriMapResId);
+        } else {
+            mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, uriMapResId);
+        }
+
+        this.mNonce = mNonce;
+        this.mState = mState;
     }
 
-    public AuthCodeFetcher(Context mContext, @StringRes int authEndpointResId, String mapName, @XmlRes int uriMapResId) {
-        this.mContext = mContext;
-        mAuthEndpoint = mContext.getResources().getString(authEndpointResId);
-        mAuthUriMap = ResourceUtil.getAuthUriMap(mContext, mapName, uriMapResId);
-    }
-
-    public void getAuthCode(AuthCodeListener listener) {
+    public void getAuthCode(final AuthCodeListener listener) {
         if (mAuthEndpoint == null || mAuthUriMap == null) {
-            Log.d(TAG, "getAuthCode: Authorization end point or Uri map is null, did you create xml? default is uri_map");
+            Log.d(TAG, "getAuthCode: authorization end point or Uri map is null, did you create xml? default is oauth_uri_map");
             listener.onAuthCodeError("authorization end point or Uri map is null");
             return;
         }
 
-        // set callback
-        RedirectUriReceiverActivity.setAuthCodeListener(listener);
+        if (mNonce != null) mAuthUriMap.put(NONCE, mNonce);
+        if (mState != null) mAuthUriMap.put(STATE, mState);
 
         // get authorization uri
         Uri authorizationUri = UriUtil.makeAuthUri(mAuthEndpoint, mAuthUriMap);
         Log.d(TAG, "getAuthCode:  authorizationUri => " + authorizationUri);
+
+        // set callback
+        RedirectUriReceiverActivity.setAuthCodeListener(listener);
 
         // Sending Intent to Browser
         Intent intent = new Intent(Intent.ACTION_VIEW, authorizationUri);
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         mContext.startActivity(intent);
     }
-
-
 }

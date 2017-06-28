@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<auth_uri_map linked="true">
+<uri_map linked="true">
     <entry key="client_id">@string/client_id</entry>
     <entry key="redirect_uri">@string/redirect_uri</entry>
     <entry key="scope">openid mail</entry>
     <entry key="response_type">code</entry>
     <entry key="prompt">consent</entry>
     <entry key="display">touch</entry>
-</auth_uri_map>
+</uri_map>

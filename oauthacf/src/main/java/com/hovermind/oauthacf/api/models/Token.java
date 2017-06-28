@@ -9,7 +9,7 @@ import java.io.Serializable;
  * Created by hassan on 2017/06/23.
  */
 
-public class Token implements Serializable {
+public class Token extends BaseToken implements Serializable {
     @SerializedName("access_token")
     @Expose
     private String accessToken;
@@ -19,9 +19,6 @@ public class Token implements Serializable {
     @SerializedName("scope")
     @Expose
     private String scope;
-    @SerializedName("id_token")
-    @Expose
-    private String idToken;
     @SerializedName("token_type")
     @Expose
     private String tokenType;
@@ -51,14 +48,6 @@ public class Token implements Serializable {
 
     public void setScope(String scope) {
         this.scope = scope;
-    }
-
-    public String getIdToken() {
-        return idToken;
-    }
-
-    public void setIdToken(String idToken) {
-        this.idToken = idToken;
     }
 
     public String getTokenType() {
