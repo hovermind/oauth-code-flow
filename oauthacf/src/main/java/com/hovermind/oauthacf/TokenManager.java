@@ -68,9 +68,10 @@ public class TokenManager {
     private String mState = null;
     String mHeaderBasic = null;
 
-
     private static TokenManager instance = null;
     private static TokenManager defaultInstance = null;
+
+    /* instance and private constructor ------------------------------------------------------------------------------------------------------------------- */
 
     // instance
     public static TokenManager getInstance(Context context, @StringRes int clientIdResId, @StringRes int clientSecretResId, @StringRes int baseUriResId, @StringRes int redirectUriResId) {
@@ -106,8 +107,9 @@ public class TokenManager {
         mLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
     }
 
+    /* END of instance and private constructor ----------------------------------------------------------------------------------------------------------- */
 
-    // getting authentication code
+    /* getting authorization code ------------------------------------------------------------------------------------------------------------------------ */
     public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, String mapName, String nonce, String state, AuthCodeListener listener) {
         mNonce = RandomStringUtils.randomAlphanumeric(25);
         if (nonce != null && !"".equals(nonce)) mNonce = nonce;
@@ -138,6 +140,10 @@ public class TokenManager {
     public void getAuthCode(String mapName, AuthCodeListener listener) {
         getAuthCode(R.string.auth_endpoint, R.xml.oauth_uri_map, mapName, null, null, listener);
     }
+
+    /* END of getting authorization code ------------------------------------------------------------------------------------------------------------------ */
+
+    /* getting access token using authorization code ------------------------------------------------------------------------------------------------------ */
 
     // fetch token for authorization response uri
     public void getToken(@NonNull Uri authResponseUri, final TokenListener listener) {
@@ -303,6 +309,10 @@ public class TokenManager {
         getTokenWithValidation(uri, listener);
     }
 
+    /* END of getting access token using authorization code ----------------------------------------------------------------------------------------------- */
+
+    /* token validation ----------------------------------------------------------------------------------------------------------------------------------- */
+
     // token validation
     public void validateByIdToken(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener) {
         Log.d(TAG, "Encoded Id Token => " + idToken);
@@ -453,6 +463,10 @@ public class TokenManager {
         validateByJwt(token.getIdToken(), iss, listener);
     }
 
+    /* END token validation ------------------------------------------------------------------------------------------------------------------------------ */
+
+    /* refreshing token ---------------------------------------------------------------------------------------------------------------------------------- */
+
     // refresh token: synchronous call
     public Token refreshToken(String refreshToken, @StringRes final int issResId) {
 
@@ -572,5 +586,7 @@ public class TokenManager {
     public void refreshToken(String refreshToken, final TokenRefreshListener listener) {
         refreshToken(refreshToken, iss, listener);
     }
+
+    /* END refresh token --------------------------------------------------------------------------------------------------------------------------------- */
 
 }

@@ -50,7 +50,7 @@ public class ResourceUtil {
                         int resId = ctx.getResources().getIdentifier(parser.getText(), "string", ctx.getPackageName());
                         if(resId > 0){
                             value = ctx.getResources().getString(resId);
-                            Log.d(TAG, "getAuthUriMap: resId => " + resId + "& value => " + value);
+                            Log.d(TAG, "getAuthUriMap: resId => " + resId + " | resValue => " + value);
                         }else{
                             Log.d(TAG, "getAuthUriMap: entry does refer to string resource");
                             value = parser.getText();
