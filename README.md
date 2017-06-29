@@ -129,9 +129,45 @@ private void validateToken(Token token){
 }
 ```
 
-## 6. Overloaded methods of TokenManager
+## 6. Method overloadeds of TokenManager
 
+Getting Auth code:
+```
+public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, String mapName, String nonce, String state, AuthCodeListener listener)
+public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, AuthCodeListener listener)
+public void getAuthCode(AuthCodeListener listener)
+public void getAuthCode(String mapName, String nonce, String state, AuthCodeListener listener)
+public void getAuthCode(String mapName, String nonce, AuthCodeListener listener) 
+public void getAuthCode(String mapName, AuthCodeListener listener)
+```
 
+Getting Token:
+```
+public void getToken(@NonNull Uri authResponseUri, final TokenListener listener)
+public void getToken(@NonNull String authCode, final TokenListener listener) 
+public void getTokenWithValidation(@NonNull Uri authResponseUri, final TokenListener listener)
+public void getTokenWithValidation(@NonNull String authCode, @NonNull String idToken, final TokenListener listener)
+```
+
+Token Validation:
+```
+public void validateByIdToken(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener)
+public void validateByIdToken(@NonNull final String idToken, final TokenValidationListener listener)
+public void validateByIdToken(@NonNull final BaseToken token, @StringRes int issResId, final TokenValidationListener listener)
+public void validateByIdToken(@NonNull final BaseToken token, final TokenValidationListener listener)
+public void validateByJwt(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener)
+public void validateByJwt(@NonNull final String idToken, final TokenValidationListener listener)
+public void validateByJwt(@NonNull final BaseToken token, @StringRes int issResId, final TokenValidationListener listener)
+public void validateByJwt(@NonNull final BaseToken token, final TokenValidationListener listener)
+```
+
+Refreshing Token:
+```
+public Token refreshToken(String refreshToken, @StringRes final int issResId) 
+public Token refreshToken(String refreshToken)
+public void refreshToken(String refreshToken, @StringRes final int issResId, final TokenRefreshListener listener) 
+public void refreshToken(String refreshToken, final TokenRefreshListener listener)
+```
 
 
 
