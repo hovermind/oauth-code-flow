@@ -1,6 +1,6 @@
 
 # Using as library module
-Clone the project and import as library module.
+Clone the project and import as library module in Android Studio
 
 #### 1. Open project.gradle and add
 ```
@@ -128,6 +128,8 @@ private void validateToken(Token token){
     });
 }
 ```
+
+## 6. Overloaded methods of TokenManager
 
 
 
