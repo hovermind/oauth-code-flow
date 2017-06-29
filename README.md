@@ -186,7 +186,7 @@ public void refreshToken(String refreshToken, final TokenRefreshListener listene
 </activity>
 ```
 ####  <a name="step-2_3"> Create OAuthLoginActivity
-Follow [step 3](#step-3), [step 4](#step-4), [step 5](#step-5), [step 6](#step-6), [step 7](#step-7) [Using as library module](#as-module)
+Follow [step 3](#step-3), [step 4](#step-4), [step 5](#step-5), [step 6](#step-6) & [step 7](#step-7) from [Using as library module](#as-module)
 
 
 
