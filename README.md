@@ -2,7 +2,7 @@
 ## 1. Using as library module
 Clone the project and import as library module.
 
-## Open project.gradle and add
+#### Open project.gradle and add
 ```
 ext{
     oauthScheme = "your_scheme"
@@ -10,7 +10,7 @@ ext{
 }
 ```
 
-### Create string resources
+#### Create string resources
 ```
 <resources>
     <string name="client_id">test-client</string>
@@ -22,7 +22,7 @@ ext{
 </resources>
 ``` 
 
-### Create custom xml resource & name it 'oauth_uri_map.xml' (res/xml/oauth_uri_map.xml)
+#### Create custom xml resource & name it ```oauth_uri_map.xml``` ( ```res/xml/oauth_uri_map.xml``` )
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <uri_map linked="true">
@@ -35,9 +35,9 @@ ext{
     ... ... ...
 </uri_map>
 ```
-'oauth_uri_map.xml' is default. You don't have to pass resId ('R.xml.oauth_uri_map') to instantiate TokenManager (TokenManager.java is the main class of this library). you can use any name you want & then you have to pass resId ('R.xml.you_cus_uri_map_res_name') to instantiate TokenManager
+```oauth_uri_map.xml``` is default - you don't have to pass resId (```R.xml.oauth_uri_map```) to instantiate TokenManager (`TokenManager.java` is the main class of this library). you can use any name you want & then you have to pass resId (```R.xml.your_custom_uri_map_res_name```) to instantiate TokenManager
 
-All data in 'oauth_uri_map.xml' will be parsed to Map<key, value> to construct Authorization Uri. Default entry-map name is 'uri_map', you can name it whatever you want: 
+All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` to construct Authorization Uri. Default entry-map name is ```uri_map```, you can name it whatever you want: 
 ```
 <your_entry_map_name linked="true">
     ... ... ...
@@ -45,6 +45,8 @@ All data in 'oauth_uri_map.xml' will be parsed to Map<key, value> to construct A
 </your_entry_map_name >
 ```
 Then you have to pass that map name to instantiate TokenManager
+
+
 
 
 
