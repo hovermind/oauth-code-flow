@@ -163,12 +163,12 @@ public void refreshToken(String refreshToken, final TokenRefreshListener listene
 ```
 
 ## Using as Gradle Dependency
-####  <a name="step-2_1"> Use Jitpack.io
-- goto jitpack.io and follow instructions
+#### 1. <a name="step-2_1">Use Jitpack.io
+- goto <a href="https://jitpack.io/">jitpack.io</a> and follow instructions
 - get the gradle dependency
 - open app.gradle and use that gradle dependency
 
-####  <a name="step-2_2"> Open Manifest.xml & Add intent filter for RedirectUriReceiverActivity (this Activity belongs to library):
+#### 2. <a name="step-2_2">Open Manifest.xml & Add intent filter for RedirectUriReceiverActivity (this Activity belongs to library):
 ```
 <activity
     android:name="com.hovermind.oauthacf.RedirectUriReceiverActivity"
@@ -185,7 +185,9 @@ public void refreshToken(String refreshToken, final TokenRefreshListener listene
     </intent-filter>
 </activity>
 ```
-####  <a name="step-2_3"> Create OAuthLoginActivity
+#### 3. <a name="step-2_3">Create LoginActivity
+Create Login Activity (i.e. OAuthLoginActivity) where you will use the libray to get access token from authorization server.
+
 Follow [step 3](#step-3), [step 4](#step-4), [step 5](#step-5), [step 6](#step-6) & [step 7](#step-7) from [Using as library module](#as-module)
 
 
