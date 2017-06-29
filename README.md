@@ -35,11 +35,19 @@ ext{
     ... ... ...
 </uri_map>
 ```
-All data in 'oauth_uri_map.xml' will be parsed to Map<key, value> to construct Authorization Uri. Default map name is 'uri_map', you can name the entry map name whatever you want: 
+'oauth_uri_map.xml' is default. You don't have to pass resId ('R.xml.oauth_uri_map') to instantiate TokenManager (TokenManager.java is the main class of this library). you can use any name you want & then you have to pass resId ('R.xml.you_cus_uri_map_res_name') to instantiate TokenManager
+
+All data in 'oauth_uri_map.xml' will be parsed to Map<key, value> to construct Authorization Uri. Default entry-map name is 'uri_map', you can name it whatever you want: 
 ```
-<your_map linked="true">
+<your_entry_map_name linked="true">
     ... ... ...
     ... ... ...
-</your_map>
+</your_entry_map_name >
 ```
-Then you have to pass that map name to instantiate TokenManager (TokenManager.java is the main class of this library)
+Then you have to pass that map name to instantiate TokenManager
+
+
+
+
+
+
