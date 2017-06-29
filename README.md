@@ -56,13 +56,28 @@ To use ```getDefaultInstance(Context context)``` :
 - provide all required string resources as mentioned in step 2
 
 #### 5. Using TokenManager in OAuthLoginActivity
-Getting authorization code
+OAuthLoginActivity.java
+```
+private final String TAG = MainActivity.class.getSimpleName();
+private TokenManager mTokenManger;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    // using default instance
+    mTokenManger = TokenManager.getDefaultInstance(MainActivity.this);
+    fetchAuthCode();
+}
+```
+Getting authorization code:
 ```
 mTokenManger.getAuthCode(new AuthCodeListener() {
     @Override
     public void onAuthCodeReceived(Uri authResponseUri) {
         Log.d(TAG, "onAuthCodeReceived: authResponseUri => " + authResponseUri);
-        // get token (AccessToken, RefreshToken etc.) using authResponseUri
+        // get token (AccessToken, RefreshToken ...) using authResponseUri
         // fetchToken(authResponseUri);
     }
 
@@ -77,6 +92,43 @@ mTokenManger.getAuthCode(new AuthCodeListener() {
     }
 });
 ```
+Getting Token (AccessToken, RefreshToken ...) using authResponseUri:
+```
+    private void fetchToken(Uri authResponseUri) {
+        // getting token using authResponseUri
+        mTokenManger.getToken(authResponseUri, new TokenListener() {
+            @Override
+            public void onTokenReceived(final Token token) {
+                Log.d(TAG, "onTokenReceived: access token => " + token.getAccessToken());
+                // validate token either by idToken or by JWT
+                // validateToken(token)
+            }
+
+            @Override
+            public void onTokenError(String errorMsg) {
+                Log.d(TAG, "onTokenError: error => " + errorMsg);
+            }
+        });
+    }
+```
+Validating token by idToken (or by JWT => Token validation end point of Authorization server):
+```
+    private void validateToken(Token token){
+        // token validation using IdToken
+        mTokenManger.validateByIdToken(token, new TokenValidationListener() {
+            @Override
+            public void onValidationOk(boolean isTokenValid) {
+                Log.d(TAG, "onValidationOk: isTokenValid => " + isTokenValid);
+            }
+
+            @Override
+            public void onValidationFailed(String errorMsg) {
+                Log.d(TAG, "onValidationFailed: error => " + errorMsg);
+            }
+        });
+    }
+```
+
 
 
 
