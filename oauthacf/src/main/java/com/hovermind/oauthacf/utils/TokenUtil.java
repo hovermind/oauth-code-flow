@@ -46,7 +46,7 @@ public class TokenUtil {
     }
 
     private static String decodeBase64(String base64) {
-        return new String(Base64.decode(base64, Base64.DEFAULT), StandardCharsets.UTF_8);
+        return new String(Base64.decode(base64, Base64.URL_SAFE), StandardCharsets.UTF_8);
     }
 
 }
