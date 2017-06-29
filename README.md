@@ -1,8 +1,8 @@
 
 # Using as library module
-Clone the project and import as library module in Android Studio
+#### 1. Clone the project and import as library module in Android Studio
 
-#### 1. Open project.gradle and add
+#### 2. <a name="step-2"></a>Open project.gradle and add
 ```
 ext{
     oauthScheme = "your_scheme"
@@ -10,7 +10,7 @@ ext{
 }
 ```
 
-#### 2. <a name="step-2"></a>Create string resources
+#### 3. <a name="step-3"></a>Create string resources
 ```
 <resources>
     <string name="client_id">test-client</string>
@@ -22,7 +22,7 @@ ext{
 </resources>
 ``` 
 
-#### 3. Create custom xml resource & name it ```oauth_uri_map.xml``` ( ```res/xml/oauth_uri_map.xml``` )
+#### 4. <a name="step-4"></a>Create custom xml resource & name it ```oauth_uri_map.xml``` ( ```res/xml/oauth_uri_map.xml``` )
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <uri_map linked="true">
@@ -35,7 +35,7 @@ ext{
     ... ... ...
 </uri_map>
 ```
-```oauth_uri_map.xml``` is default - you don't have to pass resId (i.e. ```R.xml.oauth_uri_map```) to instantiate TokenManager (see [TokenManager](#step-4)). You can use any name you want & then you have to pass resId (```R.xml.your_custom_uri_map_res_name```) to instantiate TokenManager (see [Method overloads of TokenManager](#step-6))
+```oauth_uri_map.xml``` is default - you don't have to pass resId (i.e. ```R.xml.oauth_uri_map```) to instantiate TokenManager (see [TokenManager](#step-5)). You can use any name you want & then you have to pass resId (```R.xml.your_custom_uri_map_res_name```) to instantiate TokenManager (see [Method overloads of TokenManager](#step-7))
 
 All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` to construct Authorization Uri. Default entry-map name is ```uri_map```, you can name it whatever you want: 
 ```
@@ -44,18 +44,18 @@ All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` t
     ... ... ...
 </your_entry_map_name >
 ```
-Then you have to pass that map name to instantiate TokenManager (see [Method overloads of TokenManager](#step-6))
+Then you have to pass that map name to instantiate TokenManager (see [Method overloads of TokenManager](#step-7))
 
-#### 4. <a name="step-4"></a>TokenManager
+#### 5. <a name="step-5"></a>TokenManager
 The main class, it's singleton. Getting instance:
 - ```TokenManager.getInstance(<parameters>)```
 - ```TokenManager.getDefaultInstance(<context>)```
 
 To use ```getDefaultInstance(Context context)``` : 
-- name xml resource file as ```oauth_uri_map.xml``` & entry-map as ```uri_map``` as mentioned in *step 3*
-- provide all required string resources as mentioned in [step 2](#step-2)
+- name xml resource file as ```oauth_uri_map.xml``` & entry-map as ```uri_map``` as mentioned in [step 4](#step-4)
+- provide all required string resources as mentioned in [step 3](#step-3)
 
-#### 5. Using TokenManager in OAuthLoginActivity
+#### 6. <a name="step-6"></a>Using TokenManager in OAuthLoginActivity
 OAuthLoginActivity.java
 ```
 private final String TAG = MainActivity.class.getSimpleName();
@@ -129,7 +129,7 @@ private void validateToken(Token token){
 }
 ```
 
-#### 6. <a name="step-6"></a>Method overloads of TokenManager
+#### 7. <a name="step-7"></a>Method overloads of TokenManager
 
 Getting Auth code:
 ```
