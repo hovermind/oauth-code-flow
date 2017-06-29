@@ -55,7 +55,74 @@ If you use ```getDefaultInstance(Context context)```
 - name custom xml resource file ```oauth_uri_map.xml``` & name entry-map ```uri_map``` as mentioned in step 3
 - provide all required string resources as mentioned in step 2
 
+#### 5. Using TokenManager in OAuthLoginActivity
+```
+public class MainActivity extends AppCompatActivity {
+    private final String TAG = MainActivity.class.getSimpleName();
+    private TokenManager mTokenManger;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // lib
+        mTokenManger = TokenManager.getDefaultInstance(MainActivity.this);
+        fetchAuthCode();
+    }
+
+    private void fetchAuthCode() {
+
+        // getting authorization code
+        mTokenManger.getAuthCode(new AuthCodeListener() {
+            @Override
+            public void onAuthCodeReceived(Uri authResponseUri) {
+                Log.d(TAG, "onAuthCodeReceived: authResponseUri => " + authResponseUri);
+                // get token (AccessToken, RefreshToken etc.) using Auth response uri
+                getTokenWithValidation(authResponseUri);
+            }
+
+            @Override
+            public void onAuthCodeReceived(String authCode, String idToken) {
+                Log.d(TAG, "onAuthCodeReceived: auth code => " + authCode);
+            }
+
+            @Override
+            public void onAuthCodeError(String errorMsg) {
+                Log.d(TAG, "onAuthCodeError: error => " + errorMsg);
+            }
+        });
+
+    }
+
+    private void getTokenWithValidation(Uri authResponseUri) {
+
+        mTokenManger.getToken(authResponseUri, new TokenListener() {
+            @Override
+            public void onTokenReceived(final Token token) {
+                Log.d(TAG, "onTokenReceived: access token => " + token.getAccessToken());
+
+                // token validation using IdToken
+                mTokenManger.validateByIdToken(token, new TokenValidationListener() {
+                    @Override
+                    public void onValidationOk(boolean isTokenValid) {
+                        Log.d(TAG, "onValidationOk: isTokenValid => " + isTokenValid);
+                    }
+
+                    @Override
+                    public void onValidationFailed(String errorMsg) {
+                        Log.d(TAG, "onValidationFailed: error => " + errorMsg);
+                    }
+                });
+            }
+
+            @Override
+            public void onTokenError(String errorMsg) {
+                Log.d(TAG, "onTokenError: error => " + errorMsg);
+            }
+        });
+    }
+```
 
 
 
