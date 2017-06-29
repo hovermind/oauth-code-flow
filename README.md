@@ -195,7 +195,7 @@ Follow [step 3](#step-3), [step 4](#step-4), [step 5](#step-5), [step 6](#step-6
 
 ## License
 
-   Copyright 2017 <a href="http://hovermind.com">Hovermind</a>
+   Copyright 2017 <a href="http://hovermind.com">HoverMind</a>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
