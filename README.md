@@ -129,7 +129,7 @@ private void validateToken(Token token){
 }
 ```
 
-## 6. Method overloadeds of TokenManager
+### 6. Method overloads of TokenManager
 
 Getting Auth code:
 ```
