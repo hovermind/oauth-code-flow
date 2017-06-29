@@ -35,7 +35,7 @@ ext{
     ... ... ...
 </uri_map>
 ```
-```oauth_uri_map.xml``` is default - you don't have to pass resId (i.e. ```R.xml.oauth_uri_map```) to instantiate TokenManager (`TokenManager.java` is the main class of this library). You can use any name you want & then you have to pass resId (```R.xml.your_custom_uri_map_res_name```) to instantiate TokenManager
+```oauth_uri_map.xml``` is default - you don't have to pass resId (i.e. ```R.xml.oauth_uri_map```) to instantiate TokenManager (`TokenManager.java` is the main class of this library). You can use any name you want & then you have to pass resId (```R.xml.your_custom_uri_map_res_name```) to instantiate TokenManager (see [Method overloads of TokenManager](#step-6))
 
 All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` to construct Authorization Uri. Default entry-map name is ```uri_map```, you can name it whatever you want: 
 ```
@@ -128,7 +128,7 @@ private void validateToken(Token token){
 }
 ```
 
-#### 6. Method overloads of TokenManager
+#### 6. <a name="step-6"></a>Method overloads of TokenManager
 
 Getting Auth code:
 ```
