@@ -10,7 +10,7 @@ ext{
 }
 ```
 
-#### 2. Create string resources
+#### 2. <a name="step-2"></a>Create string resources
 ```
 <resources>
     <string name="client_id">test-client</string>
@@ -46,14 +46,14 @@ All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` t
 ```
 Then you have to pass that map name to instantiate TokenManager (see [Method overloads of TokenManager](#step-6))
 
-#### 4. <a name="step-4"></a>TokenManager instance
-The main class, it's singleton. 
+#### 4. <a name="step-4"></a>TokenManager
+The main class, it's singleton. Getting instance:
 - ```TokenManager.getInstance(<parameters>)```
 - ```TokenManager.getDefaultInstance(<context>)```
 
 To use ```getDefaultInstance(Context context)``` : 
 - name xml resource file as ```oauth_uri_map.xml``` & entry-map as ```uri_map``` as mentioned in *step 3*
-- provide all required string resources as mentioned in *step 2*
+- provide all required string resources as mentioned in [step 2](#step-2)
 
 #### 5. Using TokenManager in OAuthLoginActivity
 OAuthLoginActivity.java
