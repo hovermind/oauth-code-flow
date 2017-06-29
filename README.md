@@ -52,7 +52,7 @@ getting instance:
 - ```TokenManager.getDefaultInstance(<context>)```
 
 To use ```getDefaultInstance(Context context)``` : 
-- name custom xml resource file as ```oauth_uri_map.xml``` & name entry-map as ```uri_map``` as mentioned in *step 3*
+- name xml resource file as ```oauth_uri_map.xml``` & entry-map as ```uri_map``` as mentioned in *step 3*
 - provide all required string resources as mentioned in *step 2*
 
 #### 5. Using TokenManager in OAuthLoginActivity
