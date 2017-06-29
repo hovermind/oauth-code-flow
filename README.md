@@ -48,8 +48,8 @@ Then you have to pass that map name to instantiate TokenManager.
 
 #### 4. TokenManager
 getting instance: 
-1. ```TokenManager.getInstance(<parameters>)```
-2. ```TokenManager.getDefaultInstance(<context>)```
+- ```TokenManager.getInstance(<parameters>)```
+- ```TokenManager.getDefaultInstance(<context>)```
 
 To use ```getDefaultInstance(Context context)``` : 
 - name custom xml resource file as ```oauth_uri_map.xml``` & name entry-map as ```uri_map``` as mentioned in *step 3*
