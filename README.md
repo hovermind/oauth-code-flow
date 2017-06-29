@@ -94,39 +94,39 @@ mTokenManger.getAuthCode(new AuthCodeListener() {
 ```
 Getting Token (AccessToken, RefreshToken ...) using authResponseUri:
 ```
-    private void fetchToken(Uri authResponseUri) {
-        // getting token using authResponseUri
-        mTokenManger.getToken(authResponseUri, new TokenListener() {
-            @Override
-            public void onTokenReceived(final Token token) {
-                Log.d(TAG, "onTokenReceived: access token => " + token.getAccessToken());
-                // validate token either by idToken or by JWT
-                // validateToken(token)
-            }
+private void fetchToken(Uri authResponseUri) {
+    // getting token using authResponseUri
+    mTokenManger.getToken(authResponseUri, new TokenListener() {
+        @Override
+        public void onTokenReceived(final Token token) {
+            Log.d(TAG, "onTokenReceived: access token => " + token.getAccessToken());
+            // validate token either by idToken or by JWT
+            // validateToken(token)
+        }
 
-            @Override
-            public void onTokenError(String errorMsg) {
-                Log.d(TAG, "onTokenError: error => " + errorMsg);
-            }
-        });
-    }
+        @Override
+        public void onTokenError(String errorMsg) {
+            Log.d(TAG, "onTokenError: error => " + errorMsg);
+        }
+    });
+}
 ```
 Validating token by idToken (or by JWT => Token validation end point of Authorization server):
 ```
-    private void validateToken(Token token){
-        // token validation using IdToken
-        mTokenManger.validateByIdToken(token, new TokenValidationListener() {
-            @Override
-            public void onValidationOk(boolean isTokenValid) {
-                Log.d(TAG, "onValidationOk: isTokenValid => " + isTokenValid);
-            }
+private void validateToken(Token token){
+    // token validation using IdToken
+    mTokenManger.validateByIdToken(token, new TokenValidationListener() {
+        @Override
+        public void onValidationOk(boolean isTokenValid) {
+            Log.d(TAG, "onValidationOk: isTokenValid => " + isTokenValid);
+        }
 
-            @Override
-            public void onValidationFailed(String errorMsg) {
-                Log.d(TAG, "onValidationFailed: error => " + errorMsg);
-            }
-        });
-    }
+        @Override
+        public void onValidationFailed(String errorMsg) {
+            Log.d(TAG, "onValidationFailed: error => " + errorMsg);
+        }
+    });
+}
 ```
 
 
