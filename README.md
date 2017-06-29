@@ -46,8 +46,7 @@ All entries in ```oauth_uri_map.xml``` will be parsed to ```Map<key, value>``` t
 ```
 Then you have to pass that map name to instantiate TokenManager.
 
-#### 4. TokenManager
-getting instance: 
+#### 4. TokenManager instance
 - ```TokenManager.getInstance(<parameters>)```
 - ```TokenManager.getDefaultInstance(<context>)```
 
