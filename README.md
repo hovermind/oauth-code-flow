@@ -1,5 +1,5 @@
 
-# Using as library module
+# <a name="as-module"></a>Using as library module
 #### 1. Clone the project and import as library module in Android Studio
 
 #### 2. <a name="step-2"></a>Open project.gradle and add
@@ -9,7 +9,6 @@ ext{
     oauthHost = "your_host"
 }
 ```
-
 #### 3. <a name="step-3"></a>Create string resources
 ```
 <resources>
@@ -21,7 +20,6 @@ ext{
     <string name="iss">http://hovermind.com/</string>
 </resources>
 ``` 
-
 #### 4. <a name="step-4"></a>Create custom xml resource & name it ```oauth_uri_map.xml``` ( ```res/xml/oauth_uri_map.xml``` )
 ```
 <?xml version="1.0" encoding="utf-8"?>
@@ -128,9 +126,7 @@ private void validateToken(Token token){
     });
 }
 ```
-
 #### 7. <a name="step-7"></a>Method overloads of TokenManager
-
 Getting Auth code:
 ```
 public void getAuthCode(@StringRes int authEndpointResId, @XmlRes int authUriMapResId, String mapName, String nonce, String state, AuthCodeListener listener)
@@ -140,7 +136,6 @@ public void getAuthCode(String mapName, String nonce, String state, AuthCodeList
 public void getAuthCode(String mapName, String nonce, AuthCodeListener listener) 
 public void getAuthCode(String mapName, AuthCodeListener listener)
 ```
-
 Getting Token:
 ```
 public void getToken(@NonNull Uri authResponseUri, final TokenListener listener)
@@ -148,7 +143,6 @@ public void getToken(@NonNull String authCode, final TokenListener listener)
 public void getTokenWithValidation(@NonNull Uri authResponseUri, final TokenListener listener)
 public void getTokenWithValidation(@NonNull String authCode, @NonNull String idToken, final TokenListener listener)
 ```
-
 Token Validation:
 ```
 public void validateByIdToken(@NonNull final String idToken, @StringRes int issResId, final TokenValidationListener listener)
@@ -160,7 +154,6 @@ public void validateByJwt(@NonNull final String idToken, final TokenValidationLi
 public void validateByJwt(@NonNull final BaseToken token, @StringRes int issResId, final TokenValidationListener listener)
 public void validateByJwt(@NonNull final BaseToken token, final TokenValidationListener listener)
 ```
-
 Refreshing Token:
 ```
 public Token refreshToken(String refreshToken, @StringRes final int issResId) 
@@ -168,6 +161,32 @@ public Token refreshToken(String refreshToken)
 public void refreshToken(String refreshToken, @StringRes final int issResId, final TokenRefreshListener listener) 
 public void refreshToken(String refreshToken, final TokenRefreshListener listener)
 ```
+
+## Using as Gradle Dependency
+####  <a name="step-2_1"> Use Jitpack.io
+- goto jitpack.io and follow instructions
+- get the gradle dependency
+- open app.gradle and use that gradle dependency
+
+####  <a name="step-2_2"> Open Manifest.xml & Add intent filter for RedirectUriReceiverActivity (this Activity belongs to library):
+```
+<activity
+    android:name="com.hovermind.oauthacf.RedirectUriReceiverActivity"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data
+            android:scheme="you_scheme" 
+            android:host="your_host"/>
+    </intent-filter>
+</activity>
+```
+####  <a name="step-2_3"> Create OAuthLoginActivity
+Follow [step 3](#step-3), [step 4](#step-4), [step 5](#step-5), [step 6](#step-6), [step 7](#step-7) [Using as library module](#as-module)
 
 
 
